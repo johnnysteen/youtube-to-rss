@@ -1,7 +1,7 @@
 #!/bin/bash
 
 documentroot=/Library/WebServer/Documents/ #Whatever directory has this file in it
-feeds=( examplefeed examplefeed2 ) #Edit this with list of directories with feeds you want
+feeds=( rekieta examplefeed examplefeed2 ) #Edit this with list of directories with feeds you want
 
 uptime=6 #Hour (in 24 hour clock) at which you want to update
 
