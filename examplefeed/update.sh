@@ -1,3 +1,3 @@
 #!/bin/bash
 
-../update.sh 'rekieta' `cat rekieta-url` archive
+../update.sh 'rekieta' `cat url` archive
