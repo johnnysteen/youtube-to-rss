@@ -1,11 +1,12 @@
 # youtube-to-rss
 
 * To use, create a directory with the name of your feed.
-* In this repository I called it "examplefeed".
+* In this repository I called it "rekieta" because that's whose channel I wanted to listen to in podcast form, and couldn't be bothered to change it to a dummy example.
 * Make a text file called "url" with the url to the channel or playlist.
 * Make a blank file and call it "archive". Or, if you don't want to download all of a channel's old videos, instead run
 >  youtube-dl --get-ids channel-url > archive
 * Edit "feed.head" with the name of your feed and the URL of the root directory.
+* Leave "feed.foot" as is. Each directory gets its own feed.foot.
 * Then edit feed/update.sh with the name of the directory and name of the url text file.
 
 * Repeat the above for every feed. Don't forget to add all these new directories to your apache2 conf.
