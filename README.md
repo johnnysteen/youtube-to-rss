@@ -1,8 +1,8 @@
 # youtube-to-rss
 
 * To use, create a directory with the name of your feed.
-* In this repository I called it "feed".
-* Make a text file called "feed-url" with the url to the channel or playlist.
+* In this repository I called it "examplefeed".
+* Make a text file called "url" with the url to the channel or playlist.
 * Make a blank file and call it "archive". Or, if you don't want to download all of a channel's old videos, instead run
 >  youtube-dl --get-ids channel-url > archive
 * Edit "feed.head" with the name of your feed and the URL of the root directory.
