@@ -21,6 +21,7 @@ do
     newfile=${filebase:(-11)}.$fileext  #1234567890A.mp4
     length=`ffmpeg -i "$oldfile" 2>&1 | grep Duration | awk -F: '{print 3600 * $2 + 60*$3 + $4 }'`
     mv "$oldfile" $newfile
+    mv feed.body feed.oldbody
     cat << EOF >> feed.body
     <item>
     <title>${oldfile%-*}</title>
@@ -28,6 +29,8 @@ do
     <enclosure url="http://$URL/$1/$newfile" type="audio/mpeg" length="$length"></enclosure>
     </item>
 EOF
+    cat feed.oldbody >> feed.body
+    rm feed.oldbody
 done < log2.out
 
 cat feed.head feed.body feed.foot > feed.rss
