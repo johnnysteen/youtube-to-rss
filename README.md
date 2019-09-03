@@ -11,7 +11,7 @@
 
 * Repeat the above for every feed. Don't forget to add all these new directories to your apache2 conf.
 
-* Edit run-updates.sh and replace the list of feeds with the list of directories you create.
+* Edit 'feeds' and replace the list of feeds with the list of directories you create.
 * This package supports an arbitrary number of feeds.
 
 * root/update.sh does the main work.
