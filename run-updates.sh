@@ -23,7 +23,7 @@ do
     let mins=$(date +%M)+60*$hr
     let secs=$(date +%S)+60*$mins
     let sleeptime=$interval-$secs
-    echo 'Will return in ' $sleeptime ' seconds.'
+    echo 'Will return in ' $sleeptime ' seconds (hit ENTER to update sooner)'
     read -t $sleeptime
 done
 
