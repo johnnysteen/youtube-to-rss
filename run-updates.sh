@@ -7,7 +7,7 @@ let interval=3600*$uptime
 
 while :
 do
-    echo 'The time is ' `date +%H:%M:%S`
+    echo 'The time is ' `date '+%Y.%m.%d %H:%M:%S'`
 
     youtube-dl -U
     echo 'Updating feeds...'
@@ -24,7 +24,7 @@ do
     let secs=$(date +%S)+60*$mins
     let sleeptime=$interval-$secs
     echo 'Will return in ' $sleeptime ' seconds.'
-    sleep $sleeptime
+    read -t $sleeptime
 done
 
 
