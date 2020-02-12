@@ -1,10 +1,10 @@
-##Before first use
+## Before first use
 * Change `$URL` in `setup.sh` to whatever base URL you're hosting from. The feed will be at `http://$URL/$feedname/feed.rss`.
 
-##To use
+## To use
 * To use, run `run-updates.sh` in a terminal window and leave it open. Or, if you actually know what you're doing and know a better way to leave it running constantly, do that instead.
 
-##To create a feed
+## To create a feed
 * To create a feed, run
 
 > setup.sh feedname
