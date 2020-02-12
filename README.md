@@ -1,22 +1,28 @@
-# youtube-to-rss
+##Before first use
+* Change `$URL` in `setup.sh` to whatever base URL you're hosting from. The feed will be at `http://$URL/$feedname/feed.rss`.
 
-* To use, create a directory with the name of your feed.
-* In this repository I called it "rekieta" because that's whose channel I wanted to listen to in podcast form, and couldn't be bothered to change it to a dummy example. I called it "feed" at first, but that was confusing.
-* Make a text file called "url" with the url to the channel or playlist.
-* Make a blank file and call it "archive". Or, if you don't want to download all of a channel's old videos, instead run
+##To use
+* To use, run `run-updates.sh` in a terminal window and leave it open. Or, if you actually know what you're doing and know a better way to leave it running constantly, do that instead.
+
+##To create a feed
+* To create a feed, run
+
+> setup.sh feedname
+
+* You will be asked to provide the url and a title for your feed.
+
+* If you don't want to download all of a channel's old videos, then do
+
+> cd feedname
 >  youtube-dl --get-ids channel-url > archive
-* Edit "feed.head" with the name of your feed and the URL of the root directory.
-* Leave "feed.foot" as is. Each directory gets its own feed.foot.
-* Then edit rekieta/update.sh with the name of the directory and name of the url text file.
 
-* Repeat the above for every feed. Don't forget to add all these new directories to your apache2 conf.
+* You may have to add these new directories to your apache2 conf.
 
-* Edit 'feeds' and replace the list of feeds with the list of directories you create.
-* This package supports an arbitrary number of feeds.
+* Repeat the above for every feed.
+
 
 * root/update.sh does the main work.
-* rekieta/update.sh just calls root/update.sh
-* run-updates.sh will run all of the feeds' feed/update.sh at 6-7AM every morning.
+* run-updates.sh will run `update.sh` on all of the feeds periodically throughout the day.
 
 
 ## FAQs
@@ -27,7 +33,4 @@ No.
 ### Can you help me troubleshoot this?
 No. I wrote this in a day, and I suck. I'm confident you can figure this out.
 
-### Do you accept donations?
-If you'd like to donate to me, please take that amount and send it here instead:
-https://www.gofundme.com/vic-kicks-back
-He needs it a lot more than I do.
+
