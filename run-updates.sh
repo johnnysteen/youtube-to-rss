@@ -10,20 +10,23 @@ do
     echo 'The time is ' `date '+%Y.%m.%d %H:%M:%S'`
 
     youtube-dl -U
-    echo 'Updating feeds...'
     while read LINE
     do
-        echo $LINE
+        echo "Checking feed '"$LINE"' for updates..."
         cd $documentroot/$LINE
-        bash -x ./update.sh
+        bash ../update.sh
         cd $documentroot
     done < feeds
 
-    hr=$(expr $(date +%H) % $uptime)
-    let mins=$(date +%M)+60*$hr
-    let secs=$(date +%S)+60*$mins
+    hr=10#$(expr $(date +%H) % $uptime)
+    let mins=10#$(date +%M)+60*$hr
+    let secs=10#$(date +%S)+60*$mins
     let sleeptime=$interval-$secs
-    echo 'Will return in ' $sleeptime ' seconds (hit ENTER to update sooner)'
+    let sleepsecs=$sleeptime%60
+    let sleepmins=$sleeptime/60%60
+    let sleephrs=$sleeptime/3600
+    echo 'Finished updating at ' `date '+%Y.%m.%d %H:%M:%S'`
+    echo 'Will return in' $sleephrs 'hrs' $sleepmins 'mins' $sleepsecs 'secs (ENTER: update now)'
     read -t $sleeptime
 done
 
