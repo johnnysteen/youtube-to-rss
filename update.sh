@@ -5,7 +5,11 @@
 #    exit 1
 #fi
 
+feedname=$1
+. documentroot
+cd $documentroot/$1
 . params
+
 
 URL='192.168.1.170'
 

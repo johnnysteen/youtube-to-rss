@@ -1,4 +1,6 @@
 ## Before first use
+* Clone this repository to any directory.
+* Edit `documentroot` with whatever the root directory for your webserver is.
 * Change `$URL` in `setup.sh` to whatever base URL you're hosting from. The feed will be at `http://$URL/$feedname/feed.rss`.
 
 ## To use
@@ -21,9 +23,9 @@
 * Repeat the above for every feed.
 
 ## What the scripts do
-* `setup.sh` creates new feeds.
-* `update.sh` downloads new uploads and adds them to the RSS feed.
-* `run-updates.sh` will run `update.sh` on all of the feeds periodically throughout the day.
+* setup.sh creates new feeds.
+* update.sh downloads new uploads and adds them to the RSS feed.
+* run-updates.sh will run `update.sh` on all of the feeds periodically throughout the day.
 
 
 ## FAQs
