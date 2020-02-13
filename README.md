@@ -21,9 +21,9 @@
 * Repeat the above for every feed.
 
 ## What the scripts do
-* setup.sh creates new feeds.
-* update.sh downloads new uploads and adds them to the RSS feed.
-* run-updates.sh will run `update.sh` on all of the feeds periodically throughout the day.
+* `setup.sh` creates new feeds.
+* `update.sh` downloads new uploads and adds them to the RSS feed.
+* `run-updates.sh` will run `update.sh` on all of the feeds periodically throughout the day.
 
 
 ## FAQs
