@@ -1,17 +1,10 @@
 #!/bin/bash
 
-#if (( $# != 3 )); then
-#    echo 'usage: ' $0 ' name-of-feed channel-url archive-file'
-#    exit 1
-#fi
+. config
 
-feedname=$1
-. documentroot
 cd $documentroot/$1
 . params
 
-
-URL='192.168.1.170'
 
 youtube-dl -xciw --max-downloads 1 --download-archive archive $channelurl > log.out
 
