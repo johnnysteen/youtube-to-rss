@@ -1,7 +1,9 @@
 ## Before first use
 * Clone this repository to any directory.
-* Edit `documentroot` with wherever yours is.
-* Change `$URL` in `setup.sh` to whatever base URL you're hosting from. The feed will be at `http://$URL/$feedname/feed.rss`.
+* Open `config`.
+* Change `URL` to whatever base URL you're hosting from. The feed will be at `http://$URL/$feedname/feed.rss`.
+* Change `uptime` depending on how often you want to check for new videos (interval resets at midnight).
+* Edit `documentroot`  with wherever yours is.
 
 ## To use
 * To use, run `run-updates.sh` (or `sudo ./run-updates.sh`) in a terminal window and leave it open. Or, if you actually know what you're doing and know a better way to leave it running constantly, do that instead.
