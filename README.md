@@ -16,12 +16,13 @@
 > cd feedname
 >  youtube-dl --get-ids channel-url > archive
 
-* You may have to add these new directories to your apache2 conf.
+* You may have to add `root/feedname` to your apache2 conf.
 
 * Repeat the above for every feed.
 
-
-* root/update.sh does the main work.
+## What the scripts do
+* setup.sh creates new feeds.
+* update.sh downloads new uploads and adds them to the RSS feed.
 * run-updates.sh will run `update.sh` on all of the feeds periodically throughout the day.
 
 
