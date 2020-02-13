@@ -1,10 +1,10 @@
 ## Before first use
 * Clone this repository to any directory.
-* Edit `documentroot` with whatever the root directory for your webserver is.
+* Edit `documentroot` with wherever yours is.
 * Change `$URL` in `setup.sh` to whatever base URL you're hosting from. The feed will be at `http://$URL/$feedname/feed.rss`.
 
 ## To use
-* To use, run `run-updates.sh` in a terminal window and leave it open. Or, if you actually know what you're doing and know a better way to leave it running constantly, do that instead.
+* To use, run `run-updates.sh` (or `sudo ./run-updates.sh`) in a terminal window and leave it open. Or, if you actually know what you're doing and know a better way to leave it running constantly, do that instead.
 
 ## To create a feed
 * To create a feed, run
