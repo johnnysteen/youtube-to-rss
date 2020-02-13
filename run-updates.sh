@@ -1,6 +1,8 @@
 #!/bin/bash
 
-documentroot=/Library/WebServer/Documents/
+#documentroot=/Library/WebServer/Documents/
+#. documentroot
+#cd $documentroot
 
 uptime=8
 let interval=3600*$uptime
@@ -13,9 +15,7 @@ do
     while read LINE
     do
         echo "Checking feed '"$LINE"' for updates..."
-        cd $documentroot/$LINE
-        bash ../update.sh
-        cd $documentroot
+        bash update.sh $LINE
     done < feeds
 
     hr=10#$(expr $(date +%H) % $uptime)
