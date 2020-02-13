@@ -4,11 +4,12 @@
 #. documentroot
 #cd $documentroot
 
-uptime=8
+uptime=8 #update interval in hours
 let interval=3600*$uptime
 
 while :
 do
+    . config
     echo 'The time is ' `date '+%Y.%m.%d %H:%M:%S'`
 
     youtube-dl -U
