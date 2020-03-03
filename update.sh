@@ -25,8 +25,8 @@ do
     mv feed.body feed.oldbody
     cat << EOF >> feed.body
     <item>
-    <title>${oldfile%-*}</title>
-    <pubdate>`date`</pubdate>
+    <title>${oldfile%-$newfile}</title>
+    <pubdate>`date '+%a, %d %b %Y %H:%M:%S %z'`</pubdate>
     <enclosure url="http://$URL/$feedname/$newfile" type="audio/mpeg" length="$length"></enclosure>
     </item>
 EOF
