@@ -1,5 +1,5 @@
 #!/bin/bash
-. documentroot
+. config
 cd $documentroot
 
 feedname=$1
