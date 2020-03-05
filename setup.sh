@@ -1,5 +1,6 @@
 #!/bin/bash
 . config
+echo $feedname >> feeds
 cd $documentroot
 
 feedname=$1
@@ -25,5 +26,4 @@ channelurl=$feedurl
 feedtitle="$feedtitle"
 EOF
 
-echo $feedname >> feeds
 
