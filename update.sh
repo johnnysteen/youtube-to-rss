@@ -6,7 +6,7 @@ cd $documentroot/$1
 . params
 
 
-youtube-dl -xciw --max-downloads 1 --download-archive archive $channelurl > log.out
+youtube-dl --write-info-json -xciw --max-downloads 1 --download-archive archive $channelurl > log.out
 
 grep -i '\[download\] destination' log.out > log2.out
 
@@ -15,6 +15,12 @@ do
     oldfile=${LINE#*: }                 #Long F@#$ title!-1234567890A.webm
     filebase=${oldfile%.*}              #Long F@#$ title!-1234567890A
     echo 'New episode: ' $filebase
+
+    pubdate=`cat "$filebase.info.json" | python3 -c "import sys, json; print(json.load(sys.stdin)['upload_date'])"`
+    description=`cat "$filebase.info.json" | python3 -c "import sys, json; print(json.load(sys.stdin)['description'])" | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g'`
+
+
+    rm -- "$filebase.info.json"
     list_of_files=( "$filebase".* )
     oldfile="${list_of_files[0]}"       #Long F@#$ title!-1234567890A.mp4
     fileext=${oldfile##*.}              #mp4
@@ -22,14 +28,20 @@ do
     length=`ffmpeg -i "$oldfile" 2>&1 | grep Duration | awk -F: '{print 3600 * $2 + 60*$3 + $4 }'`
     mv "$oldfile" $newfile
     oldfile=$(echo $oldfile | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g')
+
+
     mv feed.body feed.oldbody
     cat << EOF >> feed.body
     <item>
     <title>${oldfile%-$newfile}</title>
-    <pubdate>`date '+%a, %d %b %Y %H:%M:%S %z'`</pubdate>
+    <pubdate>`date -jf '%Y%m%d' '+%a, %d %b %Y %H:%M:%S %z' $pubdate`</pubdate>
     <enclosure url="http://$URL/$feedname/$newfile" type="audio/mpeg" length="$length"></enclosure>
+    <description>
+    $description
+    </description>
     </item>
 EOF
+
     cat feed.oldbody >> feed.body
     rm feed.oldbody
 done < log2.out
