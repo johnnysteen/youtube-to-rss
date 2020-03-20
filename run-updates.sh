@@ -10,6 +10,7 @@ let interval=3600*$uptime
 while :
 do
     . config
+    let interval=3600*$uptime
     echo 'The time is ' `date '+%Y.%m.%d %H:%M:%S'`
 
     youtube-dl -U
