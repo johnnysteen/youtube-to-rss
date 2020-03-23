@@ -17,7 +17,7 @@ do
     while read LINE
     do
         echo "Checking feed '"$LINE"' for updates..."
-        bash update.sh $LINE
+        bash update.sh $LINE 1
     done < feeds
 
     hr=10#$(expr $(date +%H) % $uptime)
