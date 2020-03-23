@@ -5,8 +5,13 @@
 cd $documentroot/$1
 . params
 
+if [ -n "$2" ] && [ "$2" -eq "$2" ] 2>/dev/null; then
+    numdl=1
+else
+    numdl=$2
+fi
 
-youtube-dl --write-info-json -xciw --max-downloads $2 --download-archive archive $channelurl > log.out
+youtube-dl --write-info-json -xciw --max-downloads $numdl --download-archive archive $channelurl > log.out
 
 grep -i '\[download\] destination' log.out > log2.out
 
