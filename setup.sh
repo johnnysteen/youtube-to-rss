@@ -16,6 +16,9 @@ read feedtitle
 echo -n "Enter URL: "
 read feedurl
 
+echo -n "Enter a URL for the thumbnail or leave empty: "
+read thumburl
+
 touch $feeddir/feed.body
 touch $feeddir/archive
 
@@ -24,6 +27,7 @@ cat << EOF > $feeddir/params
 feedname=$feedname
 channelurl=$feedurl
 feedtitle="$feedtitle"
+thumburl="$thumburl"
 EOF
 
 
