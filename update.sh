@@ -22,6 +22,7 @@ do
 
     echo 'New episode: ' $filebase
 
+    vidurl=`cat "$filebase.info.json" | python3 -c "import sys, json; print(json.load(sys.stdin)['webpage_url'])"`
     pubdate=`cat "$filebase.info.json" | python3 -c "import sys, json; print(json.load(sys.stdin)['upload_date'])"`
     pubstring=`date -jf '%Y%m%d' '+%a, %d %b %Y %H:%M:%S %z' $pubdate`
     description=`cat "$filebase.info.json" | python3 -c "import sys, json; print(json.load(sys.stdin)['description'])" | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g'`
@@ -47,6 +48,8 @@ do
     <pubdate>$pubstring</pubdate>
     <enclosure url="http://$URL/$feedname/$newfile" type="audio/mpeg" length="$length"></enclosure>
     <description>
+    Original video: $vidurl
+
     $description
     </description>
     </item>
