@@ -6,9 +6,9 @@ cd $documentroot/$1
 . params
 
 if [ -n "$2" ] && [ "$2" -eq "$2" ] 2>/dev/null; then
-    numdl=1
-else
     numdl=$2
+else
+    numdl=1
 fi
 
 youtube-dl --write-info-json -xciw --max-downloads $numdl --download-archive archive $channelurl > log.out
