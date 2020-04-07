@@ -11,7 +11,7 @@ else
     numdl=1
 fi
 
-youtube-dl --write-info-json -xciw --max-downloads $numdl --download-archive archive $channelurl > log.out
+youtube-dl --write-info-json -xciw --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
 
 grep -i '\[download\] destination' log.out > log2.out
 
@@ -48,6 +48,8 @@ do
     <pubdate>$pubstring</pubdate>
     <enclosure url="http://$URL/$feedname/$newfile" type="audio/mpeg" length="$length"></enclosure>
     <description>
+    ${oldfile%-$newfile}
+
     Original video: $vidurl
 
     $description
