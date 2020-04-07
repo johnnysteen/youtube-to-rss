@@ -23,7 +23,7 @@ do
             bash update.sh $LINE 1
         done < feeds
     else
-        echo "Checking feed '"$feedname"' for updates (downloading '"$numdls"' videos)..."
+        echo "Checking feed '"$feedname"' for updates (downloading $numdls videos)..."
         bash update.sh $feedname $numdls
     fi
 
