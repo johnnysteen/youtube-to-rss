@@ -7,15 +7,16 @@
 uptime=8 #update interval in hours
 let interval=3600*$uptime
 numdls=1
-feedname=FEEDNAME_DEFAULT_VAL
+feedname=''
 
 while :
 do
+    clear
     . config
     let interval=3600*$uptime
     echo 'The time is ' `date '+%Y.%m.%d %H:%M:%S'`
 
-    if [ "$feedname" = FEEDNAME_DEFAULT_VAL ]; then
+    if [ "$feedname" = '' ]; then
         youtube-dl -U
         while read LINE
         do
@@ -28,7 +29,7 @@ do
     fi
 
     numdls=1
-    feedname=FEEDNAME_DEFAULT_VAL
+    feedname=''
     hr=10#$(expr $(date +%H) % $uptime)
     let mins=10#$(date +%M)+60*$hr
     let secs=10#$(date +%S)+60*$mins

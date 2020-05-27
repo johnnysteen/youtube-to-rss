@@ -46,6 +46,7 @@ do
     <item>
     <title>${oldfile%-$newfile}</title>
     <pubdate>$pubstring</pubdate>
+    <guid>${filebase:(-11)}</guid>
     <enclosure url="http://$URL/$feedname/$newfile" type="audio/mpeg" length="$length"></enclosure>
     <description>
     ${oldfile%-$newfile}
