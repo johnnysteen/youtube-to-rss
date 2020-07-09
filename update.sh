@@ -11,7 +11,7 @@ else
     numdl=1
 fi
 
-youtube-dl --write-info-json -xciw --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
+youtube-dl --restrict-filenames --write-info-json -xciw --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
 
 grep -i '\[download\] destination' log.out > log2.out
 
@@ -22,10 +22,10 @@ do
 
     echo 'New episode: ' $filebase
 
-    vidurl=`cat "$filebase.info.json" | python3 -c "import sys, json; print(json.load(sys.stdin)['webpage_url'])"`
-    pubdate=`cat "$filebase.info.json" | python3 -c "import sys, json; print(json.load(sys.stdin)['upload_date'])"`
+    vidurl=`cat "$filebase.info.json" | python -c "import sys, json; print(json.load(sys.stdin)['webpage_url'])"`
+    pubdate=`cat "$filebase.info.json" | python -c "import sys, json; print(json.load(sys.stdin)['upload_date'])"`
     pubstring=`date -jf '%Y%m%d' '+%a, %d %b %Y %H:%M:%S %z' $pubdate`
-    description=`cat "$filebase.info.json" | python3 -c "import sys, json; print(json.load(sys.stdin)['description'])" | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g'`
+    description=`cat "$filebase.info.json" | python -c "import sys, json; print(json.load(sys.stdin)['description'].encode('utf-8'))" | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g'`
 
     echo 'Published ' "$pubstring"
 
