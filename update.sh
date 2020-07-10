@@ -11,7 +11,7 @@ else
     numdl=1
 fi
 
-youtube-dl --restrict-filenames --write-info-json -xciw --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
+youtube-dl --datebefore `date -v-1d +%Y%m%d` --restrict-filenames --write-info-json -xciw --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
 
 grep -i '\[download\] destination' log.out > log2.out
 
