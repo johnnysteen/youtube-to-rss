@@ -1,57 +1,72 @@
 #!/bin/bash
+echo '**********' `date` '**********' 1>&2
+echo $PATH 1>&2
+PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+cd /Users/jcost/youtube-to-rss/
 
 . config
 
 cd $documentroot/$1
 . params
 
-if [ -n "$2" ] && [ "$2" -eq "$2" ] 2>/dev/null; then
-    numdl=$2
-else
-    numdl=1
-fi
+OPTIND=2
+while getopts ":n:v:" arg; do
+    case $arg in
+        n)
+            numdl=${OPTARG}
+            ;;
+        v)
+            channelurl=${OPTARG}
+            ;;
+    esac
+done
 
-youtube-dl --datebefore `date -v-1d +%Y%m%d` --restrict-filenames --write-info-json -xciw --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
+#if [ -n "$2" ] && [ "$2" -eq "$2" ] 2>/dev/null; then
+#    numdl=$2
+#else
+#    numdl=1
+#fi
+
+#youtube-dl --datebefore `date -v-1d +%Y%m%d` --restrict-filenames --write-info-json -xciw --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
+youtube-dl --cookies /Users/jcost/youtube-to-rss/youtube.com_cookies.txt --id --abort-on-unavailable-fragment --restrict-filenames --write-info-json -xci --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
 
 grep -i '\[download\] destination' log.out > log2.out
 
-while read LINE
+for finfojson in *.info.json;
 do
-    oldfile=${LINE#*: }                 #Long F@#$ title!-1234567890A.webm
-    filebase=${oldfile%.*}              #Long F@#$ title!-1234567890A
+if [ -f $finfojson ]; then
+    filebase=${finfojson%%.*}
 
-    echo 'New episode: ' $filebase
 
-    vidurl=`cat "$filebase.info.json" | python -c "import sys, json; print(json.load(sys.stdin)['webpage_url'])"`
-    pubdate=`cat "$filebase.info.json" | python -c "import sys, json; print(json.load(sys.stdin)['upload_date'])"`
+    title=`cat "$finfojson" | python -c "import sys, json; print(json.load(sys.stdin)['title'])" | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g'`
+    vidurl=`cat "$finfojson" | python -c "import sys, json; print(json.load(sys.stdin)['webpage_url'])"`
+    pubdate=`cat "$finfojson" | python -c "import sys, json; print(json.load(sys.stdin)['upload_date'])"`
     pubstring=`date -jf '%Y%m%d' '+%a, %d %b %Y %H:%M:%S %z' $pubdate`
-    description=`cat "$filebase.info.json" | python -c "import sys, json; print(json.load(sys.stdin)['description'].encode('utf-8'))" | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g'`
+    description=`cat "$finfojson" | python -c "import sys, json; print(json.load(sys.stdin)['description'].encode('utf-8'))" | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g'`
 
+    echo 'New episode: ' $title
     echo 'Published ' "$pubstring"
 
-    rm -- "$filebase.info.json"
+    rm -- "$finfojson"
 
     list_of_files=( "$filebase".* )
-    oldfile="${list_of_files[0]}"       #Long F@#$ title!-1234567890A.mp4
-    fileext=${oldfile##*.}              #mp4
-    newfile=${filebase:(-11)}.$fileext  #1234567890A.mp4
+    oldfile="${list_of_files[0]}"
+    newfile=$oldfile
+
     length=`ffmpeg -i "$oldfile" 2>&1 | grep Duration | awk -F: '{print 3600 * $2 + 60*$3 + $4 }'`
-
-    mv "$oldfile" $newfile
-    oldfile=$(echo $oldfile | sed 's/\&/\&amp\;/g;s/\</\&lt\;/g;s/\>/\&gt\;/g')
-
 
     mv feed.body feed.oldbody
     cat << EOF >> feed.body
     <item>
-    <title>${oldfile%-$newfile}</title>
+    <title>${title}</title>
     <pubdate>$pubstring</pubdate>
-    <guid>${filebase:(-11)}</guid>
+    <guid>${filebase}</guid>
     <enclosure url="http://$URL/$feedname/$newfile" type="audio/mpeg" length="$length"></enclosure>
     <description>
-    ${oldfile%-$newfile}
+    ${title}
 
     Original video: $vidurl
+    Downloaded: `date`
 
     $description
     </description>
@@ -60,7 +75,8 @@ EOF
 
     cat feed.oldbody >> feed.body
     rm feed.oldbody
-done < log2.out
+fi
+done
 
 cat << EOF > feed.newrss
 <?xml version="1.0" encoding="UTF-8"?>

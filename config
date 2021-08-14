@@ -1,4 +1,5 @@
 URL='192.168.1.170'
-uptime=6 #update interval in hours
+uptime=24 #update interval in hours
 documentroot=/Library/WebServer/Documents/
 thumburl=""
+numdl=3
