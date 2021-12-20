@@ -1,5 +1,5 @@
-URL='192.168.1.170'
+URL='192.168.1.138'
 uptime=24 #update interval in hours
-documentroot=/Library/WebServer/Documents/
+documentroot=/media/Tuscany/Library/WebServer/Documents/
 thumburl=""
 numdl=3
