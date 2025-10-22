@@ -1,14 +1,19 @@
 #!/bin/bash
 echo '**********' `date` '**********' 1>&2
+starttime=`date`
 echo $PATH 1>&2
-PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+echo $@
+PATH=$PATH:/home/pi/.pyenv/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 ytdlpath=/home/pi/youtube-to-rss
 cd $ytdlpath
-
+which yt-dlp
+yt-dlp --version
+#youtube-dl --version
 . config
 
 cd $documentroot/$1
 . params
+
 
 overridelock=0
 OPTIND=2
@@ -41,21 +46,42 @@ touch LOCK
 uniqid=$(date '+%s')
 
 #youtube-dl --datebefore `date -v-1d +%Y%m%d` --restrict-filenames --write-info-json -xciw --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
-youtube-dl --cookies $ytdlpath/youtube.com_cookies.txt -o "%(id)s${uniqid}.%(ext)s" --abort-on-unavailable-fragment --restrict-filenames --write-info-json -xci --yes-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
+echo "Downloading ${numdl} videos..." | tee log.out
+if [ "$numdl" -ne 0 ]; then
+#yt-dlp --cookies $ytdlpath/youtube.com_cookies.txt -o "%(id)s${uniqid}.%(ext)s" --abort-on-unavailable-fragment --restrict-filenames --write-info-json -xci --yes-playlist --lazy-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
+yt-dlp -o "%(id)s${uniqid}.%(ext)s" --abort-on-unavailable-fragment --restrict-filenames --write-info-json -xci --yes-playlist --lazy-playlist --max-downloads $numdl --download-archive archive $channelurl > log.out
+fi
+echo "Downloading max 30 videos after ${dateafter}..." | tee -a log.out
+yt-dlp --break-match-filter "upload_date>$dateafter" --cookies $ytdlpath/youtube.com_cookies.txt -o "%(id)s${uniqid}.%(ext)s" --abort-on-unavailable-fragment --restrict-filenames --write-info-json -xci --yes-playlist --lazy-playlist --max-downloads 30 --download-archive archive $channelurl >> log.out
 
 grep -i '\[download\] destination' log.out > log2.out
 
-for finfojson in *${uniqid}.info.json;
+#for finfojson in *${uniqid}.info.json;
+for finfojson in *.info.json;
+do
+if [ -f $finfojson ]; then
+
+	isplaylist=`cat -- "${finfojson}" | python -c "import sys, json; print(json.load(sys.stdin).get('_type','video')=='playlist')"`
+
+if [[ "$isplaylist" == "True" ]]; then
+rm $finfojson
+fi
+
+fi
+done
+
+
+for finfojson in *.info.json;
 do
 if [ -f $finfojson ]; then
     filebase=${finfojson%%.*}
 
 
-    title=`cat -- "${finfojson}" | python -c "import sys, json; print(json.load(sys.stdin)['title'])" | sed 's/\&/\&amp\;/g;s/</\&lt\;/g;s/>/\&gt\;/g'`
+    title=`cat -- "${finfojson}" | python -c "import sys, json; print(json.load(sys.stdin)['title'].encode('ascii','ignore').decode())" | sed 's/\&/\&amp\;/g;s/</\&lt\;/g;s/>/\&gt\;/g'`
     vidurl=`cat -- "${finfojson}" | python -c "import sys, json; print(json.load(sys.stdin)['webpage_url'])"`
     pubdate=`cat -- "${finfojson}" | python -c "import sys, json; print(json.load(sys.stdin)['upload_date'])"`
     pubstring=`date --date $pubdate '+%a, %d %b %Y %H:%M:%S %z'`
-    description=`cat -- "${finfojson}" | python -c "import sys, json; print(json.load(sys.stdin)['description'].encode('utf-8'))" | sed 's/\&/\&amp\;/g;s/</\&lt\;/g;s/>/\&gt\;/g'`
+    description=`cat -- "${finfojson}" | python -c "import sys, json; print(json.load(sys.stdin)['description'].encode('ascii','ignore').decode())" | sed 's/\&/\&amp\;/g;s/</\&lt\;/g;s/>/\&gt\;/g'`
     vid=`cat -- "${finfojson}" | python -c "import sys,json; print(json.load(sys.stdin)['id'])"`
 
     echo 'New episode: ' $title
@@ -74,14 +100,14 @@ if [ -f $finfojson ]; then
     <item>
     <title>${title}</title>
     <pubdate>$pubstring</pubdate>
-    <guid>${vid}</guid>
+    <guid>${newfile}</guid>
     <enclosure url="http://$URL/$feedname/$newfile" type="audio/mpeg" length="$length"></enclosure>
     <description>
     ${title}
 
     Filename: $newfile
     Original video: $vidurl
-    Downloaded: `date`
+    Downloaded: `date +"%a, %d %b %Y %H:%M:%S%p%Z"`
 
     $description
     </description>
@@ -116,3 +142,4 @@ rm log2.out
 mv feed.newrss feed.rss
 rm LOCK
 
+echo "Began at ${starttime}, ended "`date`
