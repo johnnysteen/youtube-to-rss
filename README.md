@@ -6,7 +6,12 @@
 * Edit `documentroot`  with wherever yours is.
 
 ## To use
-* To use, run `run-updates.sh` (or `sudo ./run-updates.sh`) in a terminal window and leave it open. Or, if you actually know what you're doing and know a better way to leave it running constantly, do that instead.
+* ~~To use, run `run-updates.sh` (or `sudo ./run-updates.sh`) in a terminal window and leave it open. Or, if you actually know what you're doing and know a better way to leave it running constantly, do that instead.~~
+* Add something like
+```
+25 */3 * * * /home/pi/youtube-to-rss/update.sh singthehours -n 3 >> /media/Tuscany/Library/WebServer/Documents/sing    thehours/cron.log 2>&1
+```
+to your crontab (```crontab -e``` to edit your crontab)
 
 ## To create a feed
 * To create a feed, run
