@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -ne 1 ]; then 
-    echo 'illegal number of arguments'
+    echo "Usage: $0 feedname"
     exit 0
 else
     feedname=$1
@@ -19,7 +19,7 @@ if [ $? -ne 0 ] ; then
     exit 0
 fi
 
-echo $feedname >> feeds
+#echo $feedname >> feeds
 cd $documentroot
 
 echo -n "Enter feed title: "
