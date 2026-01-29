@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import os
 import subprocess
 import time
@@ -91,14 +92,50 @@ class RunResult:
     stderr: str
 
 
-def run(cmd: list[str], cwd: Path) -> RunResult:
-    p = subprocess.run(cmd, cwd=str(cwd), text=True, capture_output=True)
-    return RunResult(
-        ok=(p.returncode == 0),
-        returncode=p.returncode,
-        stdout=p.stdout or "",
-        stderr=p.stderr or "",
-    )
+
+def run(cmd: list[str], cwd: Path, *, log_path: Path | None = None, append: bool = True) -> RunResult:
+    log = None
+    try:
+        if log_path is not None:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log = log_path.open("a" if append else "w", encoding="utf-8")
+
+        p = subprocess.Popen(
+            cmd,
+            cwd=str(cwd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        assert p.stdout is not None
+        # If you want to keep *some* text for error messages, buffer only last N lines:
+        tail: list[str] = []
+        TAIL_N = 0
+
+        for line in p.stdout:
+            #sys.stdout.write(line)
+            #sys.stdout.flush()
+            if log:
+                log.write(line)
+                log.flush()
+
+            tail.append(line)
+            if len(tail) > TAIL_N:
+                tail.pop(0)
+
+        rc = p.wait()
+
+        return RunResult(
+            ok=(rc in (0, 101)),        # 101 is "early stop" / partial in yt-dlp-land
+            returncode=rc,
+            stdout="".join(tail),       # last N lines only (bounded memory)
+            stderr="",                  # stderr merged into stdout
+        )
+    finally:
+        if log:
+            log.close()
 
 
 def looks_auth_related(text: str, signatures: Iterable[str]) -> bool:
@@ -139,14 +176,14 @@ def yt_dlp_with_cookie_fallback(
         cmd.extend(["--extractor-args", cfg.yt_extractor_args])
     cmd.extend(extra_args)
 
-    r1 = run(cmd, cwd=cwd)
 
     mode = "a" if append_log else "w"
     with log_path.open(mode, encoding="utf-8") as f:
         f.write(f"\n===== yt-dlp (no cookies) =====\n")
         f.write("CMD: " + " ".join(cmd) + "\n\n")
-        f.write(r1.stdout)
-        f.write(r1.stderr)
+        #f.write(r1.stdout)
+        #f.write(r1.stderr)
+    r1 = run(cmd, cwd=cwd, log_path=log_path, append=True)
 
     # Consider success if yt-dlp exited cleanly (0) OR "stopped early" (101)
     if r1.returncode in (0, 101):
@@ -169,7 +206,7 @@ def yt_dlp_with_cookie_fallback(
             cmd2.extend(["--extractor-args", cfg.yt_extractor_args])
         cmd2.extend(extra_args)
 
-        r2 = run(cmd2, cwd=cwd)
+        r2 = run(cmd2, cwd=cwd, log_path=log_path, append=True)
         with log_path.open("a", encoding="utf-8") as f:
             f.write(f"\n===== yt-dlp (WITH cookies retry) =====\n")
             f.write("CMD: " + " ".join(cmd2) + "\n\n")
