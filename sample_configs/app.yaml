@@ -1,0 +1,41 @@
+site:
+  host:  # www.sample.com
+  document_root:  # where host is served from (media will be at documentroot/your-feed/feed.rss)
+
+defaults:
+  numdl: 3
+  dateafter: "2025-03-25"   # Every run will download the -n N latest videos in the given
+                            # playlist, and *then* up to 30 videos posted after dateafter
+  thumburl: ""
+
+yt_dlp:
+  executable: "yt-dlp" # for proper cron usage, include full path to yt-dlp here (run `which yt-dlp` to find out)
+
+  # Common args shared by both yt-dlp runs
+  common_args:
+    - "--abort-on-unavailable-fragment"
+    - "--restrict-filenames"
+    - "--write-info-json"
+    - "-xci"
+    - "--yes-playlist"
+    - "--lazy-playlist"
+    - "--download-archive"
+    - "archive"
+
+  # Matches your current extractor override
+  #extractor_args: null
+  extractor_args: "youtube:player_client=default,-android_sdkless"
+  # TEMP: workaround for yt-dlp YouTube 403s (Jan 2026) (replace with null later)
+
+auth:
+  # Optional; leave null or remove block if not using cookies
+  cookies_file: "/home/pi/youtube.com_cookies.txt"
+  use_cookies_on_fail: true
+
+  # Strings that trigger retry-with-cookies
+  fail_signatures:
+    - "sign in"
+    - "confirm you're not a bot"
+    - "http error 403"
+    - "429"
+
