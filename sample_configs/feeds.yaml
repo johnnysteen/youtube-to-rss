@@ -1,0 +1,11 @@
+feeds:
+  - id: "myfeed1"
+    title: "Here's what I don't get"
+    channelurl: "http://path/to/channel/videos"
+    thumburl: "path/to/thumbnail.png"
+
+  - id: "myplaylist2"
+    title: "My 'random' playlist on Youtube"
+    channelurl: "https://www.youtube.com/playlist?list=fakeplaylist"
+    thumburl: ""
+

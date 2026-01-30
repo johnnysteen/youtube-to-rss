@@ -1,0 +1,6 @@
+configs/
+deprecated/
+youtube.com_cookies.txt
+podcasts
+__pycache__/
+*.egg-info

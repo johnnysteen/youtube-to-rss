@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "youtube-to-rss"
+version = "0.1.0"
+description = "Download video feeds with yt-dlp and publish them as podcast RSS feeds"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+authors = [
+  { name = "Johnny Steen" }
+]
+
+# Runtime Python dependencies
+dependencies = [
+  "PyYAML>=6.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/johnnysteen/youtube-to-rss"
+Repository = "https://github.com/johnnysteen/youtube-to-rss"
+
+# CLI entrypoint
+[project.scripts]
+y2r = "youtube_to_rss.__main__:main"
+
+[tool.setuptools]
+packages = ["youtube_to_rss"]
+
