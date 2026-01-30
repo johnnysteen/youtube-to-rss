@@ -15,6 +15,12 @@ import yaml
 
 from .locks import exclusive_lock
 
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]  # .../youtube-to-rss
+DEFAULT_APP = REPO_ROOT / "configs" / "app.yaml"
+DEFAULT_FEEDS = REPO_ROOT / "configs" / "feeds.yaml"
+
 
 # ----------------------------
 # Config models + loading
@@ -206,12 +212,10 @@ def yt_dlp_with_cookie_fallback(
             cmd2.extend(["--extractor-args", cfg.yt_extractor_args])
         cmd2.extend(extra_args)
 
-        r2 = run(cmd2, cwd=cwd, log_path=log_path, append=True)
         with log_path.open("a", encoding="utf-8") as f:
             f.write(f"\n===== yt-dlp (WITH cookies retry) =====\n")
             f.write("CMD: " + " ".join(cmd2) + "\n\n")
-            f.write(r2.stdout)
-            f.write(r2.stderr)
+        r2 = run(cmd2, cwd=cwd, log_path=log_path, append=True)
 
         if r2.ok:
             return
@@ -307,19 +311,27 @@ def download_feed(cfg: AppConfig, feed: FeedConfig, max_downloads: int | None, o
 # ----------------------------
 # CLI
 # ----------------------------
-
 def main() -> None:
+    from datetime import datetime
+    print(f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
     ap = argparse.ArgumentParser(description="youtube-to-rss download phase (stages into inbox/)")
-    ap.add_argument("--app", default="configs/app.yaml")
-    ap.add_argument("--feeds", default="configs/feeds.yaml")
+    #ap.add_argument("--app", default="configs/app.yaml")
+    #ap.add_argument("--feeds", default="configs/feeds.yaml")
 
     ap.add_argument("feed_id", help="Feed id (directory name under document_root / podcasts/)")
     ap.add_argument("-n", "--max-downloads", type=int, default=None, help="Override numdl for this run")
     ap.add_argument("-v", "--override-url", default=None, help="Override channel URL for this run")
 
+    ap.add_argument("--app", default=str(DEFAULT_APP))
+    ap.add_argument("--feeds", default=str(DEFAULT_FEEDS))
+
     args = ap.parse_args()
 
+    print(f"Using app config: {args.app}")
+    print(f"Using feeds config: {args.feeds}")
     cfg, feeds = load_configs(Path(args.app), Path(args.feeds))
+
     feed = feeds.get(args.feed_id)
     if not feed:
         raise SystemExit(f"Unknown feed_id: {args.feed_id}")
