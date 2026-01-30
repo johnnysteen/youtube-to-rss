@@ -205,7 +205,6 @@ journalctl --user -u 'y2r-update@*.service' -f
 ## Development notes
 
 * RSS updates are append-only; large feeds are never fully loaded into memory.
-* `.egg-info/`, `__pycache__/`, and virtualenvs are intentionally not tracked.
 * The code favors explicit behavior over clever abstractions.
 
 ---
