@@ -3,4 +3,11 @@ deprecated/
 youtube.com_cookies.txt
 podcasts
 __pycache__/
+youtube_to_rss/__pycache__/
 *.egg-info
+*.py[cod]
+.env/
+env/
+.venv/
+
+
