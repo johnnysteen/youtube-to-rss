@@ -1,6 +1,0 @@
-URL=<YOUR URL HERE>
-uptime=24 #update interval in hours
-documentroot=/media/Tuscany/Library/WebServer/Documents/
-thumburl=""
-numdl=3
-dateafter=20250325
