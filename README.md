@@ -1,46 +1,217 @@
-## Before first use
-* Clone this repository to any directory.
-* Open `config`.
-* Change `URL` to whatever base URL you're hosting from. The feed will be at `http://$URL/$feedname/feed.rss`.
-* Change `uptime` depending on how often you want to check for new videos (interval resets at midnight).
-* Edit `documentroot`  with wherever yours is.
+# youtube-to-rss
 
-## To use
-* ~~To use, run `run-updates.sh` (or `sudo ./run-updates.sh`) in a terminal window and leave it open. Or, if you actually know what you're doing and know a better way to leave it running constantly, do that instead.~~
-* Add something like
+A small, reliable system for turning YouTube (and similar platforms supported by `yt-dlp`) into podcast-style RSS feeds.
+
+This project is designed for **long-running, unattended use** (cron + systemd), with an emphasis on:
+- robustness against partial failures
+- not reprocessing old content
+- not loading huge RSS files into memory
+- tolerating YouTube’s frequent breakage without human babysitting
+
+---
+
+## High-level design
+
+The system is deliberately split into **two phases**:
+
+1. **Download phase** (`y2r download`)
+   - Triggered by cron
+   - Uses `yt-dlp`
+   - Writes audio files and metadata into a per-feed `inbox/`
+   - Quiet by default; detailed output goes to log files
+
+2. **RSS update phase** (`y2r update-rss`)
+   - Triggered automatically by systemd path watchers
+   - Consumes `.info.json` files from `inbox/`
+   - Appends new `<item>` entries to the RSS feed without loading the whole file
+   - Moves processed files out of the inbox
+
+This separation avoids lock-file hacks and makes failure modes obvious and recoverable.
+
+---
+
+## Directory layout
+
+### Repository
 ```
-25 */3 * * * /home/pi/youtube-to-rss/update.sh singthehours -n 3 >> /media/Tuscany/Library/WebServer/Documents/sing    thehours/cron.log 2>&1
+
+youtube-to-rss/
+├── youtube_to_rss/        # Python package
+├── configs/
+│   ├── app.yaml           # Global config (paths, yt-dlp options, etc.)
+│   └── feeds.yaml         # Feed definitions
+├── env/                   # Python virtualenv (not committed)
+├── install-watchers.sh
+├── uninstall-watchers.sh
+├── status-watchers.sh
+├── pyproject.toml
+└── README.md
+
 ```
-to your crontab (```crontab -e``` to edit your crontab)
 
-## To create a feed
-* To create a feed, run
+### Per-feed media directories (under document root)
+```
 
-> setup.sh feedname
+<document_root>/<feed>/
+├── feed.rss
+├── feed.body              # RSS item body (append-only)
+├── inbox/                 # New downloads waiting to be processed
+├── processing/            # Temporary working area for update-rss
+├── archive                 # yt-dlp download archive
+├── download.log
+└── cron.log
 
-* You will be asked to provide the url and a title for your feed.
+````
 
-* If you don't want to download all of a channel's old videos, then do
+Only files in `inbox/` are considered “new”.
 
-> cd feedname
->  youtube-dl --get-ids channel-url > archive
+---
 
-* You may have to add `root/feedname` to your apache2 conf.
+## Configuration
 
-* Repeat the above for every feed.
+### `configs/app.yaml`
+Global settings, including:
+- document root
+- site URL
+- yt-dlp executable path (absolute!)
+- common yt-dlp arguments
+- cookie handling
 
-## What the scripts do
-* setup.sh creates new feeds.
-* update.sh downloads new uploads and adds them to the RSS feed.
-* run-updates.sh will run `update.sh` on all of the feeds periodically throughout the day.
+Example (abridged):
 
+```yaml
+site:
+  base_url: https://example.com
+  document_root: /media/Tuscany/Library/WebServer/Documents
 
-## FAQs
+yt_dlp:
+  executable: /usr/local/bin/yt-dlp
+  common_args:
+    - --restrict-filenames
+    - --write-info-json
+    - -x
+    - -c
+    - -i
+  extractor_args: youtube:player_client=default,-android_sdkless
+````
 
-### What is this crap? Do you know anything about code development?
-No.
+> **Important:** Use an absolute path for `yt-dlp`. Cron does not inherit your shell `$PATH`.
 
-### Can you help me troubleshoot this?
-No. I wrote this in a day, and I suck. I'm confident you can figure this out.
+---
+
+### `configs/feeds.yaml`
+
+Defines each feed:
+
+```yaml
+feeds:
+  - id: sensusfidelium
+    title: "Sensus Fidelium"
+    channel_url: https://www.youtube.com/user/onearmsteve4192/videos
+    image_url: https://example.com/image.jpg
+```
+
+The `id` must match the directory name under the document root.
+
+---
+
+## Installation
+
+### 1. Create and install the virtualenv
+
+```bash
+python3 -m venv env
+source env/bin/activate
+pip install -e .
+```
+
+### 2. Install systemd watchers
+
+```bash
+./install-watchers.sh
+```
+
+This:
+
+* creates `inbox/` and `processing/` directories
+* installs systemd *user* units
+* enables linger so they run without login
+* enables and starts watchers for all feeds
+
+---
+
+## Cron jobs (downloads only)
+
+Cron should **only** run downloads. RSS updates are handled by systemd.
+
+Example:
+
+```cron
+*/10 0,4-23 * * * cd /home/pi/youtube-to-rss && /home/pi/youtube-to-rss/env/bin/y2r download random -n 1 >> /media/Tuscany/Library/WebServer/Documents/random/cron.log 2>&1
+```
+
+Notes:
+
+* Always `cd` into the repo (or rely on absolute config defaults).
+* Output is logged, not printed.
+* Partial failures are tolerated.
+
+---
+
+## Runtime behavior and failure policy
+
+* `yt-dlp` return code `101` is treated as non-fatal.
+* Playlist items that:
+
+  * are premieres
+  * are age-gated
+  * require login
+    are skipped without failing the run.
+* If **any new `.info.json`** is produced, the run is considered successful.
+* Cookie fallback is only attempted for global failures.
+
+This matches real-world `yt-dlp` behavior and avoids constant false alarms.
+
+---
+
+## Monitoring and debugging
+
+### View cron logs
+
+```bash
+tail -f <document_root>/<feed>/cron.log
+```
+
+### View yt-dlp logs
+
+```bash
+tail -f <document_root>/<feed>/download.log
+```
+
+### View RSS update activity
+
+```bash
+journalctl --user -u 'y2r-update@*.service' -f
+```
+
+### Check system status
+
+```bash
+./status-watchers.sh
+```
+
+---
+
+## Development notes
+
+* RSS updates are append-only; large feeds are never fully loaded into memory.
+* `.egg-info/`, `__pycache__/`, and virtualenvs are intentionally not tracked.
+* The code favors explicit behavior over clever abstractions.
+
+---
+
+## License
+
+MIT
 
 
