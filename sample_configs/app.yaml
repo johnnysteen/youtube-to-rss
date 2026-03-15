@@ -29,7 +29,7 @@ yt_dlp:
 
 auth:
   # Optional; leave null or remove block if not using cookies
-  cookies_file: "/home/pi/youtube.com_cookies.txt"
+  cookies_file: "C:\Users\johna\python\youtube-to-rss\youtube.com_cookies.txt"
   use_cookies_on_fail: true
 
   # Strings that trigger retry-with-cookies

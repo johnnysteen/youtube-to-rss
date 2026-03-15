@@ -118,7 +118,7 @@ def run(cmd: list[str], cwd: Path, *, log_path: Path | None = None, append: bool
         assert p.stdout is not None
         # If you want to keep *some* text for error messages, buffer only last N lines:
         tail: list[str] = []
-        TAIL_N = 0
+        TAIL_N = 100
 
         for line in p.stdout:
             #sys.stdout.write(line)
