@@ -7,7 +7,7 @@ import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Optional
 
 import yaml
 from xml.sax.saxutils import escape
@@ -127,18 +127,65 @@ def delete_if_playlist_json(path: Path) -> bool:
     return False
 
 
-def find_staged_media(inbox_dir: Path, filebase: str) -> Path:
+PREFERRED_MEDIA_EXTS = (
+    ".m4a",
+    ".mp3",
+    ".opus",
+    ".aac",
+    ".mka",
+    ".ogg",
+    ".wav",
+    ".flac",
+    ".webm",  # keep as last resort
+    ".mp4",   # last resort
+)
+
+TEMP_SUFFIXES = (
+    ".part",
+    ".ytdl",
+    ".temp",
+    ".tmp",
+)
+
+def find_staged_media(inbox_dir: Path, filebase: str) -> Optional[Path]:
     """
-    Given filebase like 'abc1231706551234', find staged media:
-    inbox/abc1231706551234.* excluding *.info.json
+    Given filebase like 'abc1231706551234', find the *final* staged media file.
+
+    Rules:
+      - Ignore *.info.json and *.info.json.processing
+      - Ignore temp/partial artifacts (*.part, *.ytdl, etc.)
+      - Prefer extracted audio outputs (m4a/mp3/...) over container formats
+      - If nothing final exists yet (download still running), return None
     """
-    candidates = [
-        p for p in inbox_dir.glob(filebase + ".*")
-        if not p.name.endswith(".info.json") and not p.name.endswith(".info.json.processing")
-    ]
+    all_matches = list(inbox_dir.glob(filebase + ".*"))
+
+    candidates: list[Path] = []
+    for p in all_matches:
+        name = p.name
+        if name.endswith(".info.json") or name.endswith(".info.json.processing"):
+            continue
+        if any(name.endswith(suf) for suf in TEMP_SUFFIXES):
+            continue
+        # Also exclude files like foo.m4a.part by suffix check above; keep this for safety:
+        if ".part" in name:
+            continue
+        candidates.append(p)
+
     if not candidates:
-        raise FileNotFoundError(f"No staged media found for base '{filebase}' in {inbox_dir}")
-    return sorted(candidates)[0]
+        # Not ready yet (or nothing downloaded). Let caller decide.
+        return None
+
+    # Prefer known media extensions in priority order
+    lowered = {p: p.suffix.lower() for p in candidates}
+    for ext in PREFERRED_MEDIA_EXTS:
+        preferred = [p for p in candidates if lowered[p] == ext]
+        if preferred:
+            # If multiple, pick the largest (most likely the complete one)
+            return max(preferred, key=lambda p: p.stat().st_size)
+
+    # Fallback: pick the largest non-temp file
+    return max(candidates, key=lambda p: p.stat().st_size)
+
 
 
 def publish_media(staged_media: Path, feed_dir: Path) -> Path:
@@ -233,6 +280,9 @@ def update_rss_for_feed(cfg: AppConfig, feed: FeedConfig, *, max_items: int | No
 
             # Find staged media, publish it to feed root (served path)
             staged_media = find_staged_media(inbox_dir, filebase)
+            if staged_media is None:
+                # Download/extraction not finished yet; skip for now.
+                continue
             published_media = publish_media(staged_media, feed_dir)
 
             # GUID = filename minus extension (your chosen rule)

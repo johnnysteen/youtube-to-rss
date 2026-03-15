@@ -10,7 +10,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
-
+import shutil
 import yaml
 
 from .locks import exclusive_lock
@@ -229,7 +229,7 @@ def yt_dlp_with_cookie_fallback(
 
 def download_feed(cfg: AppConfig, feed: FeedConfig, max_downloads: int | None, override_url: str | None) -> None:
     feed_dir = cfg.document_root / feed.id
-    inbox_dir = feed_dir / "inbox"
+    inbox_dir = feed_dir / "inbox" / ".staging"
     inbox_dir.mkdir(parents=True, exist_ok=True)
 
     # One lock per feed, download phase only
@@ -306,7 +306,9 @@ def download_feed(cfg: AppConfig, feed: FeedConfig, max_downloads: int | None, o
             append_log=True,
             run_id=run_id
         )
-
+    for p in inbox_dir.iterdir():
+        target = feed_dir/ "inbox" / p.name
+        shutil.move(str(p), str(target))
 
 # ----------------------------
 # CLI
