@@ -199,8 +199,6 @@ def yt_dlp_with_cookie_fallback(
     if inbox_has_new_video_json(cwd, run_id):
         return
 
-
-
     # Retry with cookies only when appropriate
     if (
         cfg.use_cookies_on_fail
@@ -219,6 +217,14 @@ def yt_dlp_with_cookie_fallback(
 
         if r2.ok:
             return
+
+        # With --ignore-errors, rc=1 after cookie retry means only benign errors remain
+        if "--ignore-errors" in cmd2 and r2.returncode == 1:
+            return
+
+    # With --ignore-errors, tolerate rc=1 even without cookie retry (premieres, etc.)
+    if "--ignore-errors" in cmd and r1.returncode == 1:
+        return
 
     raise RuntimeError(f"yt-dlp failed (rc={r1.returncode}). See log: {log_path}")
 
