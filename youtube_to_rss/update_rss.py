@@ -281,9 +281,14 @@ def update_rss_for_feed(cfg: AppConfig, feed: FeedConfig, *, max_items: int | No
             # Find staged media, publish it to feed root (served path)
             staged_media = find_staged_media(inbox_dir, filebase)
             if staged_media is None:
-                # Download/extraction not finished yet; skip for now.
-                continue
-            published_media = publish_media(staged_media, feed_dir)
+                # Check if already published (e.g., update_rss crashed after
+                # publish_media but before prepend_feed_item on a previous run)
+                already_published = find_staged_media(feed_dir, filebase)
+                if already_published is None:
+                    continue  # not ready yet
+                published_media = already_published
+            else:
+                published_media = publish_media(staged_media, feed_dir)
 
             # GUID = filename minus extension (your chosen rule)
             guid = published_media.stem
