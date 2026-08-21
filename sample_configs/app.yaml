@@ -13,6 +13,9 @@ yt_dlp:
 
   # Common args shared by both yt-dlp runs
   common_args:
+    - "--remote-components"
+    - "ejs:github"
+    - "--ignore-errors"        # keep going past per-item failures in a playlist/channel scan
     - "--abort-on-unavailable-fragment"
     - "--restrict-filenames"
     - "--write-info-json"
@@ -21,21 +24,37 @@ yt_dlp:
     - "--lazy-playlist"
     - "--download-archive"
     - "archive"
+    # Requires `pip install curl_cffi` in the venv. Makes yt-dlp's requests
+    # match a real Chrome browser's TLS/HTTP fingerprint. Needed as of
+    # 2026-08 for Rumble, which started fronting its embedJS metadata API
+    # with a Cloudflare managed JS challenge (plain requests get HTTP 403,
+    # cookies don't help since it's not an auth check). Harmless against
+    # YouTube and other sites, so it's left on by default. If yt-dlp errors
+    # with `Impersonate target "chrome" is not available`, curl_cffi isn't
+    # installed. See MAINTENANCE.md 2026-08-21 entry for details.
+    - "--impersonate"
+    - "chrome"
 
   # Matches your current extractor override
   #extractor_args: null
-  extractor_args: "youtube:player_client=default,-android_sdkless"
-  # TEMP: workaround for yt-dlp YouTube 403s (Jan 2026) (replace with null later)
+  extractor_args: "youtube:player_client=mweb"
+  # Workaround for yt-dlp YouTube 403s on the audio-only format (requires a
+  # GVS PO token we don't provide). mweb falls back to a lower-quality
+  # combined format that doesn't need one. See MAINTENANCE.md 2026-08-18
+  # entry for details; revisit if mweb starts requiring a PO token too.
 
 auth:
   # Optional; leave null or remove block if not using cookies
   cookies_file: "C:\Users\johna\python\youtube-to-rss\youtube.com_cookies.txt"
   use_cookies_on_fail: true
 
-  # Strings that trigger retry-with-cookies
+  # Strings that trigger retry-with-cookies. Only helps with genuine auth
+  # walls — a 403 can also come from a PO-token requirement or a Cloudflare
+  # challenge, neither of which cookies fix (see MAINTENANCE.md).
   fail_signatures:
     - "sign in"
     - "confirm you're not a bot"
     - "http error 403"
     - "429"
+    - "this video is not available"
 
