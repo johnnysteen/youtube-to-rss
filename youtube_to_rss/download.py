@@ -96,10 +96,18 @@ class RunResult:
     returncode: int
     stdout: str
     stderr: str
+    saw_signature: bool = False
 
 
 
-def run(cmd: list[str], cwd: Path, *, log_path: Path | None = None, append: bool = True) -> RunResult:
+def run(
+    cmd: list[str],
+    cwd: Path,
+    *,
+    log_path: Path | None = None,
+    append: bool = True,
+    signatures: Iterable[str] | None = None,
+) -> RunResult:
     log = None
     try:
         if log_path is not None:
@@ -119,6 +127,8 @@ def run(cmd: list[str], cwd: Path, *, log_path: Path | None = None, append: bool
         # If you want to keep *some* text for error messages, buffer only last N lines:
         tail: list[str] = []
         TAIL_N = 100
+        sig_list = list(signatures or [])
+        saw_signature = False
 
         for line in p.stdout:
             #sys.stdout.write(line)
@@ -126,6 +136,13 @@ def run(cmd: list[str], cwd: Path, *, log_path: Path | None = None, append: bool
             if log:
                 log.write(line)
                 log.flush()
+
+            # Scan every line as it streams (not just the bounded tail below) —
+            # a long-running playlist scan with --ignore-errors can print
+            # thousands of lines after an early per-item failure, and the tail
+            # buffer alone would miss it.
+            if sig_list and not saw_signature and looks_auth_related(line, sig_list):
+                saw_signature = True
 
             tail.append(line)
             if len(tail) > TAIL_N:
@@ -138,6 +155,7 @@ def run(cmd: list[str], cwd: Path, *, log_path: Path | None = None, append: bool
             returncode=rc,
             stdout="".join(tail),       # last N lines only (bounded memory)
             stderr="",                  # stderr merged into stdout
+            saw_signature=saw_signature,
         )
     finally:
         if log:
@@ -189,21 +207,29 @@ def yt_dlp_with_cookie_fallback(
         f.write("CMD: " + " ".join(cmd) + "\n\n")
         #f.write(r1.stdout)
         #f.write(r1.stderr)
-    r1 = run(cmd, cwd=cwd, log_path=log_path, append=True)
+    r1 = run(cmd, cwd=cwd, log_path=log_path, append=True, signatures=cfg.fail_signatures)
 
-    # Consider success if yt-dlp exited cleanly (0) OR "stopped early" (101)
-    if r1.returncode in (0, 101):
+    # --ignore-errors makes yt-dlp exit 0/101 even when individual items in the
+    # playlist fail (e.g. per-video "HTTP Error 403: Forbidden" on the actual
+    # media data). r1.saw_signature is computed line-by-line as output streams,
+    # so it still catches an early failure even on a long playlist scan where
+    # the bounded stdout tail would no longer contain it.
+    clean_exit = r1.returncode in (0, 101)
+    fail_detected = r1.saw_signature
+
+    if clean_exit and not fail_detected:
         return
 
-    # Even with non-zero rc, tolerate partial failures if we produced any video .info.json
-    if inbox_has_new_video_json(cwd, run_id):
+    # Even with non-zero rc, tolerate partial failures if we produced any video
+    # .info.json and there's no known-fixable fail signature to retry for.
+    if not clean_exit and inbox_has_new_video_json(cwd, run_id) and not fail_detected:
         return
 
     # Retry with cookies only when appropriate
     if (
         cfg.use_cookies_on_fail
         and cfg.cookies_file
-        and looks_auth_related(r1.stdout + "\n" + r1.stderr, cfg.fail_signatures)
+        and fail_detected
     ):
         cmd2 = [cfg.yt_dlp_exe, "--cookies", cfg.cookies_file, "-o", outtmpl, *cfg.yt_common_args, url]
         if cfg.yt_extractor_args:
@@ -224,6 +250,12 @@ def yt_dlp_with_cookie_fallback(
 
     # With --ignore-errors, tolerate rc=1 even without cookie retry (premieres, etc.)
     if "--ignore-errors" in cmd and r1.returncode == 1:
+        return
+
+    # Original run already exited cleanly by yt-dlp's own standard (0/101); the
+    # cookie retry above was a best-effort second pass for fail_signature hits.
+    # Don't fail the whole cron job over items that remain stubborn.
+    if clean_exit:
         return
 
     raise RuntimeError(f"yt-dlp failed (rc={r1.returncode}). See log: {log_path}")
