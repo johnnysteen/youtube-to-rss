@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from .download import main as download_main
 from .update_rss import main as update_rss_main
+from .timed_release import main as release_main
 
 
 def main() -> None:
@@ -12,6 +13,7 @@ def main() -> None:
     # Pass-through subcommands (each module has its own argparse)
     sub.add_parser("download", add_help=False)
     sub.add_parser("update-rss", add_help=False)
+    sub.add_parser("release", add_help=False)
 
     args, rest = ap.parse_known_args()
 
@@ -23,6 +25,10 @@ def main() -> None:
         import sys
         sys.argv = [sys.argv[0], *rest]
         update_rss_main()
+    elif args.cmd == "release":
+        import sys
+        sys.argv = [sys.argv[0], *rest]
+        release_main()
 
 
 if __name__ == "__main__":
