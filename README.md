@@ -56,6 +56,7 @@ youtube-to-rss/
 ├── feed.rss
 ├── feed.body              # RSS item body (append-only)
 ├── inbox/                 # New downloads waiting to be processed
+├── held/                  # Timed-release downloads waiting for their release time
 ├── processing/            # Temporary working area for update-rss
 ├── archive                 # yt-dlp download archive
 ├── download.log
@@ -113,6 +114,49 @@ feeds:
 
 The `id` must match the directory name under the document root.
 
+### Timed releases
+
+A feed can hold back some downloads and publish them later. Add one or more
+`timed_releases` rules to the feed:
+
+```yaml
+feeds:
+  - id: myfeed1
+    title: "My feed"
+    channelurl: https://www.youtube.com/@someone/videos
+    timed_releases:
+      - name: "sunday-sermon"         # optional, shown in logs
+        match: "(?i)sermon"           # Python regex (re.search)
+        field: "title"                # optional; any .info.json key, default "title"
+        release_at: "08:00"           # "HH:MM" or "YYYY-MM-DD HH:MM"
+        days: ["sun"]                 # optional weekday filter (mon..sun)
+        timezone: "America/Chicago"   # optional; default is system local time
+```
+
+How it works:
+
+* After each download run, every new episode is checked against the feed's
+  rules in order; the first matching rule wins. Non-matching episodes go to
+  `inbox/` as usual.
+* Matching episodes (media + `.info.json`) are moved to `<feed>/held/`, with a
+  `<file>.hold.json` recording the release time.
+* With `release_at: "HH:MM"`, the release time is the **next** occurrence of
+  that time (on one of `days`, if given) after the download. With a full date
+  and time it's that exact moment; a time already passed releases right away.
+* `y2r release` moves due episodes from `held/` into `inbox/`, and the inbox
+  watcher adds them to the feed. It runs every minute via `y2r-release.timer`
+  and also at the end of each `y2r download`.
+
+Useful commands:
+
+```bash
+y2r release --list          # show held episodes and when they'll be released
+y2r release --now myfeed1   # release everything held for a feed right now
+```
+
+Quote `release_at` values in YAML (`"08:00"`). Unquoted times are handled, but
+quoting avoids surprises.
+
 ---
 
 ## Installation
@@ -137,6 +181,7 @@ This:
 * installs systemd *user* units
 * enables linger so they run without login
 * enables and starts watchers for all feeds
+* enables `y2r-release.timer`, which releases due timed-release episodes every minute
 
 ---
 

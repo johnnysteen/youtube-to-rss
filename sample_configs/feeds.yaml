@@ -3,6 +3,18 @@ feeds:
     title: "Here's what I don't get"
     channelurl: "http://path/to/channel/videos"
     thumburl: "path/to/thumbnail.png"
+    # Optional: hold matching downloads and release them into the feed later.
+    # Rules are checked in order; the first whose regex matches wins.
+    timed_releases:
+      - name: "sunday-sermon"
+        match: "(?i)sermon"          # Python regex, searched anywhere in `field`
+        field: "title"               # optional; any .info.json key (default: title)
+        release_at: "08:00"          # next occurrence of this time after download
+        days: ["sun"]                # optional; limit HH:MM releases to these weekdays
+        timezone: "America/Chicago"  # optional; default is the system's local time
+      - name: "big-announcement"
+        match: "(?i)announcement"
+        release_at: "2026-12-25 07:00"   # one-off absolute time (released immediately if past)
 
   - id: "myplaylist2"
     title: "My 'random' playlist on Youtube"

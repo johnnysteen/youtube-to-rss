@@ -70,7 +70,7 @@ echo "Feeds:     ${FEEDS[*]}"
 # 1) Ensure per-feed directories exist: inbox + processing
 echo "Creating inbox/ and processing/ for each feed under docroot..."
 for f in "${FEEDS[@]}"; do
-  mkdir -p "$DOCROOT/$f/inbox" "$DOCROOT/$f/processing"
+  mkdir -p "$DOCROOT/$f/inbox" "$DOCROOT/$f/processing" "$DOCROOT/$f/held"
 done
 
 # 2) Install systemd user unit templates
@@ -79,6 +79,8 @@ mkdir -p "$UNIT_DIR"
 
 SERVICE_FILE="$UNIT_DIR/y2r-update@.service"
 PATH_FILE="$UNIT_DIR/y2r-watch@.path"
+RELEASE_SERVICE_FILE="$UNIT_DIR/y2r-release.service"
+RELEASE_TIMER_FILE="$UNIT_DIR/y2r-release.timer"
 
 echo "Installing systemd user units to: $UNIT_DIR"
 
@@ -104,6 +106,30 @@ Unit=y2r-update@%i.service
 WantedBy=default.target
 EOF
 
+# Timed releases: once a minute, move due episodes from held/ into inbox/
+cat > "$RELEASE_SERVICE_FILE" <<EOF
+[Unit]
+Description=y2r release held (timed-release) episodes
+
+[Service]
+Type=oneshot
+WorkingDirectory=$REPO_ROOT
+ExecStart=$REPO_ROOT/env/bin/y2r release
+EOF
+
+cat > "$RELEASE_TIMER_FILE" <<EOF
+[Unit]
+Description=Run y2r release every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Persistent=true
+Unit=y2r-release.service
+
+[Install]
+WantedBy=timers.target
+EOF
+
 # 3) Reload user systemd
 echo "Reloading systemd user daemon..."
 systemctl --user daemon-reload
@@ -117,11 +143,13 @@ echo "Enabling and starting watchers..."
 for f in "${FEEDS[@]}"; do
   systemctl --user enable --now "y2r-watch@${f}.path"
 done
+systemctl --user enable --now y2r-release.timer
 
 echo
 echo "Installed and started watchers."
 echo "Check status:"
 echo "  systemctl --user list-units 'y2r-watch@*.path'"
+echo "  systemctl --user list-timers y2r-release.timer"
 echo "Follow logs:"
 echo "  journalctl --user -u 'y2r-update@*.service' -f"
 
