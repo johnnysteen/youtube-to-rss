@@ -26,6 +26,8 @@ fi
 UNIT_DIR="$HOME/.config/systemd/user"
 SERVICE_FILE="$UNIT_DIR/y2r-update@.service"
 PATH_FILE="$UNIT_DIR/y2r-watch@.path"
+RELEASE_SERVICE_FILE="$UNIT_DIR/y2r-release.service"
+RELEASE_TIMER_FILE="$UNIT_DIR/y2r-release.timer"
 
 echo "Stopping/disabling watchers..."
 if [[ "${#FEEDS[@]}" -gt 0 ]]; then
@@ -37,8 +39,10 @@ else
   systemctl --user disable --now 'y2r-watch@*.path' 2>/dev/null || true
 fi
 
+systemctl --user disable --now y2r-release.timer 2>/dev/null || true
+
 echo "Removing unit files..."
-rm -f "$SERVICE_FILE" "$PATH_FILE"
+rm -f "$SERVICE_FILE" "$PATH_FILE" "$RELEASE_SERVICE_FILE" "$RELEASE_TIMER_FILE"
 
 echo "Reloading systemd user daemon..."
 systemctl --user daemon-reload
