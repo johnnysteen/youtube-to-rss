@@ -54,8 +54,8 @@ echo "Repo:    $REPO_ROOT"
 echo "Docroot: $DOCROOT"
 echo
 
-printf "%-16s %-10s %-10s %-9s %-24s %s\n" "feed" "enabled" "active" "pending" "last_run" "last_status"
-printf "%-16s %-10s %-10s %-9s %-24s %s\n" "----------------" "--------" "------" "-------" "------------------------" "-----------"
+printf "%-16s %-10s %-10s %-9s %-6s %-24s %s\n" "feed" "enabled" "active" "pending" "held" "last_run" "last_status"
+printf "%-16s %-10s %-10s %-9s %-6s %-24s %s\n" "----------------" "--------" "------" "-------" "----" "------------------------" "-----------"
 
 for f in "${FEEDS[@]}"; do
   path_unit="y2r-watch@${f}.path"
@@ -71,6 +71,11 @@ for f in "${FEEDS[@]}"; do
     pending="$(find "$inbox" -maxdepth 1 -type f -name '*.info.json' 2>/dev/null | wc -l | tr -d ' ')"
   else
     pending="(no inbox)"
+  fi
+
+  held="0"
+  if [[ -d "$DOCROOT/$f/held" ]]; then
+    held="$(find "$DOCROOT/$f/held" -maxdepth 1 -type f -name '*.hold.json' 2>/dev/null | wc -l | tr -d ' ')"
   fi
 
   # Best-effort last service result/time (from systemd metadata)
@@ -89,10 +94,13 @@ for f in "${FEEDS[@]}"; do
     last_result="?"
   fi
 
-  printf "%-16s %-10s %-10s %-9s %-24s %s\n" \
-    "$f" "$enabled" "$active" "$pending" "$last_ts" "${last_result}(${last_code})"
+  printf "%-16s %-10s %-10s %-9s %-6s %-24s %s\n" \
+    "$f" "$enabled" "$active" "$pending" "$held" "$last_ts" "${last_result}(${last_code})"
 done
 
+echo
+echo "Release timer: $(systemctl --user is-active y2r-release.timer 2>/dev/null || echo "no")"
+echo "Held episodes: $REPO_ROOT/env/bin/y2r release --list"
 echo
 echo "Tip: follow live runs with:"
 echo "  journalctl --user -u 'y2r-update@*.service' -f"

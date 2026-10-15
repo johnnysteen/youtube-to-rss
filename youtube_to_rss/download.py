@@ -14,6 +14,7 @@ import shutil
 import yaml
 
 from .locks import exclusive_lock
+from .timed_release import TimedRelease, hold_matching, parse_timed_releases, release_due
 
 from pathlib import Path
 
@@ -47,6 +48,7 @@ class FeedConfig:
     title: str
     channelurl: str
     thumburl: str
+    timed_releases: tuple[TimedRelease, ...] = ()
 
 
 def _load_yaml(path: Path) -> dict:
@@ -80,6 +82,7 @@ def load_configs(app_yaml: Path, feeds_yaml: Path) -> tuple[AppConfig, dict[str,
             title=str(f["title"]),
             channelurl=str(f["channelurl"]),
             thumburl=str(f.get("thumburl", "")),
+            timed_releases=parse_timed_releases(f.get("timed_releases"), str(f["id"])),
         )
         feed_map[fc.id] = fc
 
@@ -312,9 +315,17 @@ def download_feed(cfg: AppConfig, feed: FeedConfig, max_downloads: int | None, o
             append_log=True,
             run_id=run_id
         )
-    for p in inbox_dir.iterdir():
-        target = feed_dir/ "inbox" / p.name
-        shutil.move(str(p), str(target))
+
+        # Timed releases: matching episodes go to held/ instead of inbox/
+        hold_matching(feed.id, feed.timed_releases, inbox_dir, feed_dir / "held")
+
+        # Move media before .info.json so the inbox watcher never sees a JSON without its media
+        for p in sorted(inbox_dir.iterdir(), key=lambda p: p.name.endswith(".info.json")):
+            target = feed_dir/ "inbox" / p.name
+            shutil.move(str(p), str(target))
+
+    # Release anything (from this or earlier runs) whose time has come
+    release_due(feed_dir)
 
 # ----------------------------
 # CLI
